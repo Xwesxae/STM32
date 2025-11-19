@@ -1,116 +1,52 @@
-# 1. Установка Renode
-Windows:
-bash
-Скачать с официального сайта:
-https://renode.io/
-Или через chocolatey:
-choco install renode
-Linux:
-bash
-Ubuntu/Debian
-wget https://github.com/renode/renode/releases/latest/download/renode_*_amd64.deb
-sudo dpkg -i renode_*_amd64.deb
-macOS:
-bash
-brew install --cask renode
-# 2. Запуск Renode
-bash
-renode
-После запуска вы увидите:
+# Установка и первый запуск Renode
+1. Зайти на https://renode.io/#downloads и скачать эмулятор
+    
+* Установть эмулятор (требуются права администратора)
+2. Базовый рабочий процесс (на примере STM32)
 
-text
-RENODE™
-Renode, version X.X.X
-(monitor)
-# 3. Быстрый запуск STM32 эмулятора
-Способ 1: Готовые платформы
-python
-i @scripts/single-node/stm32f4_discovery.resc
-Способ 2: Минимальная конфигурация
-python
-mach create
-machine LoadPlatformDescriptionFromString "cpu: CPU.ArmCortexM4 @ sysbus"
-showAnalyzer sysbus.uart2
-start
-# 4. Проверка что эмулятор работает
-python
-Проверить регистры
-cpu PrintRegisters
+* Смоделируем простую плату на базе STM32.
 
-Проверить память  
-sysbus ReadDoubleWord 0x08000000
+*В консоли Monitor вы создаете "машину" — это корневой объект, к которому будет привязана платформа.*
 
-Тест записи/чтения
-sysbus WriteDoubleWord 0x20000000 0x12345678
-sysbus ReadDoubleWord 0x20000000
+    (monitor) mach create
+    (machine-0)
 
-Запустить эмуляцию
-start
+*Команда создаст машину с именем "machine-0"*
 
-Остановить
-pause
-# 5. Основные команды управления
-python
-Информация
-help
-version
-mach list
+    (machine-0) peripherals
+**peripherals** показывает подключенные перифирийные устройства 
+# Сборка прошивки
+ Теперь переходим к сборке прошивки для микроконтроллера при помощи одного их готовых инструментов:
 
-Управление эмуляцией
-start
-pause
-reset
+        git clone https://github.com/PhanCuong91/data.git
+        Клонирование репозитория с инструментом 
 
-Отладка
-cpu PerformanceInMips 1
-machine StartGdbServer 3333
+        cd data/renode
+        Переход в подпапку /renode в /data
 
-Выход
-quit
-# 6. Загрузка прошивки
-python
-Загрузка ELF файла
-sysbus LoadELF @firmware/test.elf
+        Дальше следует запуск  build.bat
 
-Загрузка бинарного файла
-sysbus LoadBinary @firmware/test.bin 0x08000000
-# 7. Работа с периферией
-python
-Показать все периферийные устройства
-machine LogPeripherals
+        После этого создается файл прошивки по пути
+        "...data\renode\build\src\STM32F4Template.elf"
 
-Мониторинг UART
-showAnalyzer sysbus.uart2
+        Теперь у нас есть готовый файл прошивки
 
-Работа с GPIO
-gpioA Toggle 5
-# 8. Решение проблем
-Если команда не работает:
-Проверьте синтаксис
+# Установка на эмулируемый контроллер
+В Renode:
 
-Убедитесь что находитесь в (monitor)
+        mach create
+        # Создание машины (По умолчанию machine-0)
 
-Используйте правильные имена устройств
+        machine LoadPlatformDescription @platforms/boards/stm32f4_discovery-kit.repl
+        # Загрузка готовой конфигурации микроконтроллера
 
-Если платформа не найдена:
-python
-Проверить доступные платформы
-include @scripts/single-node/
-include @platforms/cpus/
-Если не видно результатов:
-Проверьте окно UART анализатора
+        sysbus LoadELF "C:\working\data\renode\build\src\STM32F4Template.elf"
+         # Здесь должен быть путь к файлу прошивки
 
-Убедитесь что эмуляция запущена (start)
+        # открытие терминала для отображения данных UART
+        showAnalyzer sysbus.usart2
 
-# 9. Полезные сочетания
-Ctrl+C - остановить эмуляцию
+        # запуск симуляции
+        start
 
-Tab - автодополнение команд
-
-Стрелки вверх/вниз - история команд
-
-# 10. Выход из эмулятора
-python
-quit
-Важно: Все команды вводятся в (monitor), а не в окнах UART!
-
+**Как итог в новом терминале у нас должно появиться сообщение "Hello World"**
