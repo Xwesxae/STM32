@@ -1,0 +1,10 @@
+mach create
+machine LoadPlatformDescription @platforms/cpus/stm32f103.repl
+
+# Минимальная прошивка
+sysbus WriteDoubleWord 0x08000000 0x20001000
+sysbus WriteDoubleWord 0x08000004 0x08000009  
+sysbus WriteDoubleWord 0x08000008 0xE7FEE7FE
+
+showAnalyzer sysbus.uart1
+start
